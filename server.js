@@ -149,6 +149,7 @@ app.get('/sitemap.xml', (req, res) => {
   res.type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${pages.map(p=>`<url><loc>${SITE_URL}/${p}</loc></url>`).join('')}</urlset>`);
 });
 app.get('/robots.txt', (req, res) => res.type('text/plain').send(`User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /api/\nSitemap: ${SITE_URL}/sitemap.xml\n`));
+app.get('/assets/shayla-lucky.jpg', (req, res) => res.type('image/svg+xml').sendFile(path.join(__dirname,'public','assets','shayla-lucky.svg')));
 
 app.use(express.static(path.join(__dirname,'public'), { extensions:['html'], etag:true }));
 app.get('/admin', adminAuth, (req,res) => res.sendFile(path.join(__dirname,'public','admin.html')));
