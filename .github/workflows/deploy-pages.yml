@@ -29,31 +29,44 @@ jobs:
           touch _site/.nojekyll
           python - <<'PY'
           from pathlib import Path
+
           root = Path('_site')
           repo = 'D0ubl3-A-shayla-lucky-real-estate'
           pages_base = f'https://d0ubl3-a.github.io/{repo}'
-          replacements = {
-              'href="/styles.css"': 'href="styles.css"',
-              'src="/app.js"': 'src="app.js"',
-              'src="/admin.js"': 'src="admin.js"',
-              'src="/assets/': 'src="assets/',
-              'href="/buy"': 'href="buy.html"',
-              'href="/sell"': 'href="sell.html"',
-              'href="/invest"': 'href="invest.html"',
-              'href="/metro-detroit-real-estate"': 'href="metro-detroit-real-estate.html"',
-              'href="/detroit-investment-property"': 'href="detroit-investment-property.html"',
-              'href="/birmingham-mi-real-estate"': 'href="birmingham-mi-real-estate.html"',
-              'href="/about"': 'href="about.html"',
-              'href="/privacy"': 'href="privacy.html"',
-              'href="/"': 'href="index.html"',
-              'https://shaylalucky.com/': pages_base + '/',
-              'https://shaylalucky.com/assets/': pages_base + '/assets/',
-          }
+
+          replacements = [
+              ('https://shaylalucky.com/assets/shayla-lucky.jpg', pages_base + '/assets/shayla-lucky.svg'),
+              ('https://shaylalucky.com/assets/', pages_base + '/assets/'),
+              ('https://shaylalucky.com/', pages_base + '/'),
+              ('/assets/shayla-lucky.jpg', 'assets/shayla-lucky.svg'),
+              ('href="/styles.css"', 'href="styles.css"'),
+              ('src="/app.js"', 'src="app.js"'),
+              ('src="/admin.js"', 'src="admin.js"'),
+              ('src="/assets/', 'src="assets/'),
+              ('href="/buy"', 'href="buy.html"'),
+              ('href="/sell"', 'href="sell.html"'),
+              ('href="/invest"', 'href="invest.html"'),
+              ('href="/metro-detroit-real-estate"', 'href="metro-detroit-real-estate.html"'),
+              ('href="/detroit-investment-property"', 'href="detroit-investment-property.html"'),
+              ('href="/birmingham-mi-real-estate"', 'href="birmingham-mi-real-estate.html"'),
+              ('href="/about"', 'href="about.html"'),
+              ('href="/privacy"', 'href="privacy.html"'),
+              ('href="/"', 'href="index.html"'),
+          ]
+
           for p in root.glob('*.html'):
               text = p.read_text(encoding='utf-8')
-              for old, new in replacements.items():
+              for old, new in replacements:
                   text = text.replace(old, new)
               p.write_text(text, encoding='utf-8')
+
+          # GitHub Pages cannot run the Express/SQLite API. Keep the static site usable
+          # and make lead-form failure explicit instead of silently breaking.
+          app = root / 'app.js'
+          if app.exists():
+              js = app.read_text(encoding='utf-8')
+              js = js.replace("const response = await fetch('/api/leads', {", "if (location.hostname.endsWith('github.io')) { throw new Error('This preview is hosted on GitHub Pages. Lead submission will be enabled on the production host.'); }\n        const response = await fetch('/api/leads', {")
+              app.write_text(js, encoding='utf-8')
           PY
 
       - name: Configure Pages
