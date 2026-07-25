@@ -1,0 +1,76 @@
+name: Deploy Shayla Lucky site to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Prepare GitHub Pages build
+        shell: bash
+        run: |
+          rm -rf _site
+          cp -R public _site
+          touch _site/.nojekyll
+          python - <<'PY'
+          from pathlib import Path
+          root = Path('_site')
+          repo = 'D0ubl3-A-shayla-lucky-real-estate'
+          pages_base = f'https://d0ubl3-a.github.io/{repo}'
+          replacements = {
+              'href="/styles.css"': 'href="styles.css"',
+              'src="/app.js"': 'src="app.js"',
+              'src="/admin.js"': 'src="admin.js"',
+              'src="/assets/': 'src="assets/',
+              'href="/buy"': 'href="buy.html"',
+              'href="/sell"': 'href="sell.html"',
+              'href="/invest"': 'href="invest.html"',
+              'href="/metro-detroit-real-estate"': 'href="metro-detroit-real-estate.html"',
+              'href="/detroit-investment-property"': 'href="detroit-investment-property.html"',
+              'href="/birmingham-mi-real-estate"': 'href="birmingham-mi-real-estate.html"',
+              'href="/about"': 'href="about.html"',
+              'href="/privacy"': 'href="privacy.html"',
+              'href="/"': 'href="index.html"',
+              'https://shaylalucky.com/': pages_base + '/',
+              'https://shaylalucky.com/assets/': pages_base + '/assets/',
+          }
+          for p in root.glob('*.html'):
+              text = p.read_text(encoding='utf-8')
+              for old, new in replacements.items():
+                  text = text.replace(old, new)
+              p.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
